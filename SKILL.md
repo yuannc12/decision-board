@@ -7,7 +7,7 @@ description: >
   the user to extract the chain and their scorecard, research every option with
   source-verified facts, score the trade-offs with the judgment in the open, and
   generate one self-contained HTML board they own.
-  Worked example: https://keftek.com/lab/decision-simulator/
+  Worked example: https://keftek.com/lab/decision-board/
 ---
 
 # Decision Board
@@ -237,7 +237,40 @@ The engine reads `SCORECARD` for every dimension it displays, averages,
 marks, and exports, so your dimension keys can be anything; nothing
 downstream assumes the worked example's five.
 
+### Validate before you QA
+
+The skill ships a validator. Run it, fix every FAIL, and read the WARN list
+out to the user instead of quietly accepting it:
+
+    node validate.mjs your-board.html --template board.template.html
+
+It sits beside this file in the skill package, at `validate.mjs`. If you were
+handed `SKILL.md` on its own, fetch it once:
+
+    https://raw.githubusercontent.com/yuannc12/decision-board/main/validate.mjs
+
+Node 18 or newer, no packages. It checks the stylesheet against the template
+byte for byte; that every placeholder was replaced; that axis and card ids are
+unique; that every card is scored on every dimension with a stated reason,
+integers 1 to 5; that exactly one dimension is inverted; that no dimension
+scores every card the same; that every fact carries a quote and a source key
+that resolves; that every source is https; that every play stays inside its
+axis limits and clear of the locks. Then it fetches every source and looks for
+each quote in the page — Phase 2's gate, run again against what shipped.
+
+Two results are not failures and must not be treated as passes. A source that
+answers with a wall, a consent gate, or an empty shell comes back **unread**:
+verify that quote by hand, or drop the fact. A **one-word score reason**
+("steady", "solid") labels the score instead of giving a reason for it; write
+the reason.
+
+If you cannot run Node, say so in your handover rather than reporting the
+board as validated.
+
 ### QA before handing over
+
+The validator has already covered the stylesheet, the scores, the sources and
+their quotes, and the plays. What follows is what a machine cannot check.
 
 - Click every card: no lock without a reason, no empty drawer — and clicking
   a locked card itself must open the explanation, not just a small affordance
@@ -247,21 +280,13 @@ downstream assumes the worked example's five.
 - Save two different paths as scenarios: both appear in the comparison table
   with the per-dimension best marked, load restores a saved path exactly, and
   the export carries the comparison.
-- Every fact on the board appears in the sources list; every source link
-  resolves; every fact carries its verbatim quote in the data.
 - The assumptions list explains every dimension and how the profile
   aggregates — hidden judgment is the failure mode.
-- No dimension where every card scores the same (a dimension that cannot
-  change the decision is decoration; cut it or sharpen it).
 - Read the column titles as a row. Every one is a noun phrase naming a
   variable, none is a question, and none restates the decision. If one card
   anywhere would settle the decision by itself, move it to `PLAYS`.
 - Check a phone-width viewport: the scoreboard must collapse to a one-line
   summary with an expand control, not cover the board.
-- **Diff the `<style>` block of your output against the template's. They must
-  be byte-identical.** One changed character means you designed something,
-  and a board that drifts from the template is not a Decision Board. This is
-  the check that matters most; run it last and run it literally.
 - Rename a dimension's `label` in `SCORECARD` (not its `k`) and reload: the
   scoreboard, the drawer hint, the comparison table and the markdown export
   must all follow. If anything still shows the old label, the engine is not
@@ -276,7 +301,7 @@ downstream assumes the worked example's five.
 
 Boards you generate keep one line in the footer:
 
-> Built with Decision Board — keftek.com/lab/decision-simulator
+> Built with Decision Board — keftek.com/lab/decision-board
 
 Decision Board and its worked example: © 2026 Keftek — https://keftek.com — a
 strategy, design, and engineering studio for custom software, ML, and AI.

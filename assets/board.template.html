@@ -31,7 +31,7 @@
   --cols:8;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth;overflow-x:clip;}
 body{
   font-family:var(--stack);
   font-weight:300;
@@ -218,11 +218,11 @@ footer.credit a{color:var(--ink);}
 <section id="demo" class="tool">
 <div id="demohead">
   <div class="mk">Decision board</div>
-  <h2>Go-to-market for a B2B AI product</h2>
+  <h2>The decision, in the user's own terms</h2>
   <p>Pick a card in each column, or start from a play. Cards that cannot coexist with your picks lock and say why.</p>
 </div>
 <div id="toolbar">
-  <span class="lbl">Simulator:</span>
+  <span class="lbl">Board:</span>
   <button id="b-export">Export decision .md</button>
   <button id="b-clear">Reset</button>
 </div>
@@ -244,7 +244,7 @@ footer.credit a{color:var(--ink);}
   <div id="boardwrap">
     <div id="board"></div>
   </div>
-  <aside id="drawer">
+  <aside id="drawer" role="dialog" aria-label="Card detail" tabindex="-1" aria-hidden="true" inert>
     <div class="dim">Detail</div>
     <h2>Pick a card</h2>
     <p class="read">Click any card to read its data, its scores, and why it is locked or open. Click again on a selected card to remove it from the path.</p>
@@ -280,7 +280,7 @@ footer.credit a{color:var(--ink);}
 </footer>
 </section>
 <footer class="credit">
-  <p>Built with Decision Board — <a href="https://keftek.com/lab/decision-simulator">keftek.com/lab/decision-simulator</a></p>
+  <p>Built with Decision Board — <a href="https://keftek.com/lab/decision-board">keftek.com/lab/decision-board</a></p>
 </footer>
 <script>
 // ================= DATA =================
@@ -457,8 +457,23 @@ function renderDrawer(){
   const ab=document.getElementById("d-act");
   if(ab)ab.addEventListener("click",()=>{onNode(r.dim,o);});
 }
-function openDetail(id){focusId=id;document.getElementById("drawer").classList.add("open");refresh();}
-function closeDetail(){document.getElementById("drawer").classList.remove("open");}
+let lastFocus=null;
+function openDetail(id){
+  const dr=document.getElementById("drawer");
+  lastFocus=document.activeElement;
+  focusId=id;
+  dr.classList.add("open");dr.removeAttribute("inert");dr.setAttribute("aria-hidden","false");
+  refresh();
+  dr.focus();
+}
+function closeDetail(){
+  const dr=document.getElementById("drawer");
+  if(!dr.classList.contains("open"))return;
+  const inside=dr.contains(document.activeElement);
+  dr.classList.remove("open");dr.setAttribute("inert","");dr.setAttribute("aria-hidden","true");
+  if(inside&&lastFocus&&document.contains(lastFocus))lastFocus.focus();
+  lastFocus=null;
+}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDetail();});
 document.addEventListener("click",e=>{
   const dr=document.getElementById("drawer");
@@ -476,7 +491,20 @@ function pathSentence(){
   }
   return "The path in words: "+parts.join(", ")+".";
 }
-const scenarios=[];
+// Scenarios persist per board. A board is one file the reader keeps, so the
+// key is derived from its own title and axes; two boards never share a list.
+// Where storage is unavailable (Safari on file://), this degrades to memory.
+const SKEY="decisionboard:"+(()=>{
+  const src=(document.title||"")+"|"+DIMS.map(d=>d.id).join(",");
+  let h=5381;for(let i=0;i<src.length;i++)h=((h<<5)+h+src.charCodeAt(i))>>>0;
+  return h.toString(36);
+})();
+const store=(()=>{try{localStorage.setItem(SKEY+":t","1");localStorage.removeItem(SKEY+":t");return localStorage;}catch(e){return null;}})();
+const scenarios=(()=>{
+  if(!store)return [];
+  try{const v=JSON.parse(store.getItem(SKEY)||"[]");return Array.isArray(v)?v:[];}catch(e){return [];}
+})();
+function persistScenarios(){if(!store)return;try{store.setItem(SKEY,JSON.stringify(scenarios));}catch(e){}}
 let compareOpen=false;
 let activePlay=null;
 function scenarioName(){
@@ -496,7 +524,7 @@ function saveScenario(){
   let name=scenarioName(), n=2;
   while(scenarios.some(x=>x.name===name)){name=scenarioName()+" ("+n+")";n++;}
   scenarios.push({name,picks:JSON.parse(JSON.stringify(sel)),dims:{...p.dims},complete:p.complete,tag:p.profile?p.profile.tag:"incomplete",sentence:pathSentence()});
-  renderTabs();renderCompare();
+  persistScenarios();renderTabs();renderCompare();
 }
 function sameAsCurrent(sc){
   const a=JSON.stringify(Object.entries(sc.picks).map(([k,v])=>[k,[...v].sort()]).sort());
@@ -512,7 +540,7 @@ function renderTabs(){
     b.className="schip"+(sameAsCurrent(sc)?" on":"");
     b.innerHTML="<span>"+esc(sc.name)+"</span><span class='x' title='Remove'>\u00d7</span>";
     b.addEventListener("click",e=>{
-      if(e.target.classList.contains("x")){scenarios.splice(i,1);renderTabs();renderCompare();return;}
+      if(e.target.classList.contains("x")){scenarios.splice(i,1);persistScenarios();renderTabs();renderCompare();return;}
       loadScenario(i);
     });
     row.appendChild(b);
@@ -653,12 +681,23 @@ function renderSources(){
 
 
 // ================= EXPORT =================
+// The board names its own export. Every string below reads the heading the
+// board carries, so a board about hiring never exports a go-to-market title.
+function boardTitle(){
+  const h=document.querySelector("#demohead h2");
+  const t=h?h.textContent.trim():"";
+  return t||"Decision board";
+}
+function boardSlug(){
+  const t=boardTitle().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60);
+  return t||"decision-board";
+}
 function buildMd(){
   const d=new Date();
   const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const p=pathProfile(sel);
-  let md="# Go-to-market decision plate \u00b7 "+ds+"\n\n";
-  md+="Composed with Decision Board (keftek.com/lab/decision-simulator). Scores are declared judgment on top of the cited facts; pressure-test before adopting.\n\n";
+  let md="# "+boardTitle()+" \u00b7 "+ds+"\n\n";
+  md+="Composed with Decision Board (keftek.com/lab/decision-board). Scores are declared judgment on top of the cited facts; pressure-test before adopting.\n\n";
   md+="## The path\n\n";
   const words=pathSentence();
   if(words)md+=words+"\n\n";
@@ -697,7 +736,7 @@ function buildMd(){
   }
   md+="\n## Model assumptions\n\n";
   ASSUMPTIONS.forEach(a=>md+="- "+a.k+": "+a.t+"\n");
-  md+="\n---\nBuilt with Decision Board \u2014 https://keftek.com/lab/decision-simulator/ \u00b7 \u00a9 2026 Keftek\n";
+  md+="\n---\nBuilt with Decision Board \u2014 https://keftek.com/lab/decision-board/ \u00b7 \u00a9 Keftek\n";
   return md;
 }
 
@@ -716,7 +755,7 @@ document.getElementById("b-save").addEventListener("click",saveScenario);
 document.getElementById("b-clear").addEventListener("click",()=>{Object.keys(sel).forEach(k=>delete sel[k]);focusId=null;activePlay=null;document.querySelectorAll("#plays button").forEach(x=>x.classList.remove("on"));document.getElementById("playwhy").textContent="";refresh();});
 document.getElementById("b-export").addEventListener("click",()=>{
   const blob=new Blob([buildMd()],{type:"text/markdown"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="decision-board.md";a.click();URL.revokeObjectURL(a.href);
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=boardSlug()+".md";a.click();URL.revokeObjectURL(a.href);
 });
 (()=>{const dh=document.getElementById("drawerhint");
   if(dh&&INV)dh.textContent=dh.textContent+" "+invName()+" runs the other way: higher is worse.";})();
