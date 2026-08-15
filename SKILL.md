@@ -208,9 +208,17 @@ part of the file you write.
 | `PLAYS` | `{name, why, picks:{axisId: [ids...]}}` — the whole strategies that are not axes |
 | `ASSUMPTIONS` | `{k, t}` — what the dimensions mean, how the profile aggregates, what the tool deliberately does not do |
 
-Outside that region you may change exactly three things: the `<title>`, and
-the heading and lede inside `#demohead` (the decision in the user's own
-terms). Nothing else.
+Outside that region you may change exactly five things, all of them text:
+
+- the `<title>`;
+- the heading and lede inside `#demohead` — the decision in the user's own terms;
+- `#scenario` — who the board is written for, and from whose position the
+  scores are written;
+- `#srcnote` — how the facts were verified, on what date, and what was
+  dropped. Leaving the template's placeholder here makes the board lie about
+  its own sourcing.
+
+Nothing else. Not the markup, not the ids, not a class.
 
 **Do not:**
 - edit the `<style>` block, or add a single CSS rule anywhere;

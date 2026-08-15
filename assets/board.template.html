@@ -247,7 +247,7 @@ footer.credit a{color:var(--ink);}
 
 <div id="compare" hidden></div>
 
-<div id="scenario">Demo scenario: a fictional founder. B2B AI product, founder-scale team, EU home base. The scores are written from that position; the market facts on every card are real, verbatim-verified, and linked.</div>
+<div id="scenario">Who this board is written for, and from whose position the scores are written.</div>
 
 <section class="assumps">
   <div class="srchead">
@@ -265,7 +265,7 @@ footer.credit a{color:var(--ink);}
     <button id="b-sources">Show</button>
   </div>
   <div id="srcbody">
-    <p id="srcnote">Every cited fact was verified against its fetched source with a verbatim-quote check on 2026-08-14; facts that could not be verified were dropped, not softened. Where an institution's own page blocks automated access (some Gartner, Canalys, and MIT material), the fact was verified against established-media coverage of the original, and the source line names both. The scores and multipliers are explicit modelling judgment layered on top of those facts, listed under Assumptions.</p>
+    <p id="srcnote">How the facts on this board were verified, on what date, and what was dropped.</p>
     <ol id="srclist"></ol>
   </div>
 </footer>
@@ -305,6 +305,13 @@ const PLAYS = [];
 const ASSUMPTIONS = [];
 
 // ================= ENGINE =================
+// everything below reads the scorecard; no dimension key is hard-coded
+const INV=SCORECARD.find(d=>d.inverted)||null;
+const CORE=SCORECARD.filter(d=>!d.inverted);
+const CHIPS=SCORECARD.filter(d=>d.chip).length?SCORECARD.filter(d=>d.chip):SCORECARD.slice(0,3);
+// Every researched or user-supplied string is escaped before it reaches innerHTML.
+const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const invName=()=>INV?INV.label:"Risk";
 const sel={};
 let focusId=null;
 function has(s,id){return Object.values(s).flat().includes(id);}
