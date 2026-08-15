@@ -12,9 +12,9 @@ You hand it to an agent. It interviews you, researches the options, scores them 
 
 ## Get it
 
-Three ways, easiest first.
+Two files make a board: [`SKILL.md`](SKILL.md) is the method, [`assets/board.template.html`](assets/board.template.html) is the look. The skill fills the template; it never designs one.
 
-**Attach it to a chat.** Download [`SKILL.md`](SKILL.md), attach it to a conversation with Claude (or any capable assistant), and say what you're deciding. Nothing to install.
+**Attach it to a chat.** Download both files, attach them to a conversation with Claude (or any capable assistant), and say what you're deciding. Nothing to install. If you attach only `SKILL.md`, the agent fetches the template itself — it just needs to be online once.
 
 **Install it.** Download the [latest release](../../releases/latest) zip and add it in your assistant's skill settings. It stays available in every conversation.
 
@@ -27,6 +27,8 @@ git clone https://github.com/yuannc12/decision-board.git ~/.claude/skills/decisi
 ## What you get
 
 One HTML file. It opens from your filesystem — no server, no account, no build step, no network call. Share it, fork it, argue with it in a meeting. The research happens through whatever assistant you run; the finished board is yours and entirely local.
+
+Every board comes out looking like the one above, because the agent never writes a line of CSS. The palette, type scale, card anatomy, drawer and scoreboard all live in the template, and the skill's last check is that the generated board's stylesheet is byte-identical to it. Your decision is yours; the design is not a thing each agent gets to reinvent.
 
 ## How it works
 

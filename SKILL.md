@@ -174,44 +174,55 @@ verified facts.
 
 ## Phase 4 — Generate the HTML
 
-The output is ONE HTML file: no build step, no framework, no server, and no
-network call needed to open it. Data, styles, and logic all live inside the
-file. If you want a webfont, self-host it beside the file or fall back to
-system fonts — never leave the board dependent on a CDN it cannot reach.
-Use the reference implementation as the template:
+**You do not design this board. You fill it in.**
 
-    https://keftek.com/lab/decision-simulator/
+The board's look is settled: the palette, the type scale, the card anatomy,
+the drawer, the scoreboard, the locked-card treatment, the mobile collapse.
+All of it lives in `board.template.html`, which ships beside this skill. Your
+job is the data layer and nothing else.
 
-Fetch its source. Keep the engine (state, locks, drawer, scorecard profile,
-scenario save and compare, markdown export) and replace the data layer —
-these objects, in the first `<script>` block. The engine reads `SCORECARD` for
-every dimension it displays, averages, marks, and exports, so your dimension
-keys can be anything; nothing downstream assumes the reference's five:
+**Get the template.** It sits next to this file in the skill package. If you
+are reading only `SKILL.md`, fetch it once:
+
+    https://keftek.com/lab/decision-simulator/board.template.html
+
+If you cannot obtain the template, stop and tell the user the board cannot be
+built to spec, and ask them for the file. **Do not invent a visual design.**
+A board that looks invented is worth less than no board: the whole promise is
+that a Decision Board is recognisable as one.
+
+**Fill exactly one region.** Between the `DATA` marker and the `ENGINE`
+marker, replace the nine empty objects with yours. That region is the only
+part of the file you write.
 
 | Object | Holds |
 |---|---|
 | `SCORECARD` | the user's dimensions: `{k, label, short, desc, chip?, inverted?}` — exactly one `inverted`; `chip: true` puts a dimension on the card face (2-3 of them) |
-| `DIMS` | the axes: `{id, title, max, options:[{id, title, read, sc:{<k per SCORECARD>}, facts:[{t, q, s}]}]}` — `sc` values are `[score, "why"]`; `t` is the statement, `q` the verbatim quote (the audit trail), `s` keys into `SRC` |
+| `DIMS` | the axes: `{id, title, say, name?, max, options:[...]}`. `title` is the noun phrase from Phase 1.2, numbered — `"1 · Heat source"`. `say` is this axis's fragment of the path sentence with a `{}` slot — `"paid through {}"`. `name: true` on the one or two axes that should name a saved scenario |
+| ↳ `options` | `{id, title, read, sc:{<k per SCORECARD>}, facts:[{t, q, s}]}` — `sc` values are `[score, "why"]`; `t` is the statement, `q` the verbatim quote (the audit trail), `s` keys into `SRC` |
 | `SRC` | `{key: {n: "Source name, year", u: "url"}}` — every source renders as a link, never a bare name |
 | `DETAIL` | per card: `{play, gain, give, works}` — the motion, the trade, the condition |
 | `LOCKS` | `{opt, test(sel) -> reason string or false}` — structural impossibilities only |
 | `TENSIONS` | `{when: [ids...], text}` — legal but uncomfortable pairings |
 | `FRAGILE` | `{test(sel) -> bool, text}` — single-leg fragility warnings |
-| `PLAYS` | `{name, why, picks:{axisId: [ids...]}}` |
+| `PLAYS` | `{name, why, picks:{axisId: [ids...]}}` — the whole strategies that are not axes |
 | `ASSUMPTIONS` | `{k, t}` — what the dimensions mean, how the profile aggregates, what the tool deliberately does not do |
 
-Also rewrite: the page title, the hero (what decision, in the user's terms),
-the demo-scenario line, and the skill section if the domain vocabulary
-differs. Keep the credit footer.
+Outside that region you may change exactly three things: the `<title>`, and
+the heading and lede inside `#demohead` (the decision in the user's own
+terms). Nothing else.
 
-If you cannot fetch the reference, build the same structure from scratch:
-a wrapping grid of columns with clickable cards, a detail drawer (read,
-in-practice rows, score bars with reasons, cited and linked facts), a sticky
-scoreboard (one bar per scorecard dimension, the path profile, tensions, and
-a plain-language sentence describing the assembled path), locked cards that
-explain themselves when clicked, preset plays, a collapsed assumptions
-section, a collapsed sources section, and a markdown export of the chosen
-path with quotes included.
+**Do not:**
+- edit the `<style>` block, or add a single CSS rule anywhere;
+- choose a typeface, a colour, a radius, a spacing value, or a semantic
+  colour for locks, tensions or risk — the template has all of them;
+- change the markup, the ids, or anything below the `ENGINE` marker;
+- set the number of columns. The grid reads `DIMS.length` at load. A board
+  with five axes and one with eight both come out right with no edit.
+
+The engine reads `SCORECARD` for every dimension it displays, averages,
+marks, and exports, so your dimension keys can be anything; nothing
+downstream assumes the worked example's five.
 
 ### QA before handing over
 
@@ -234,15 +245,19 @@ path with quotes included.
   anywhere would settle the decision by itself, move it to `PLAYS`.
 - Check a phone-width viewport: the scoreboard must collapse to a one-line
   summary with an expand control, not cover the board.
-- Rename a dimension key in `SCORECARD` and reload: chips, profile text,
-  comparison table and export must all follow. If anything still says the old
-  key, the engine is not reading the scorecard.
+- **Diff the `<style>` block of your output against the template's. They must
+  be byte-identical.** One changed character means you designed something,
+  and a board that drifts from the template is not a Decision Board. This is
+  the check that matters most; run it last and run it literally.
+- Rename a dimension's `label` in `SCORECARD` (not its `k`) and reload: the
+  scoreboard, the drawer hint, the comparison table and the markdown export
+  must all follow. If anything still shows the old label, the engine is not
+  reading the scorecard.
 - Tab through the board: every card is reachable and operable from the
   keyboard, with a visible focus ring.
-- **Escape everything researched or user-supplied before it reaches the DOM.**
-  Card titles, statements, quotes and source names are strings you did not
-  write; run them through an HTML-escaping helper rather than concatenating
-  them into `innerHTML` raw.
+- Escaping is already handled: the template runs every researched string
+  through `esc()` before it reaches the DOM. Do not remove those calls, and
+  do not add markup to your own data strings expecting it to render.
 
 ## Credit
 

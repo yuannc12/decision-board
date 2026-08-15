@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Board</title>
+<style>
+:root{
+  --paper:#F5F6F7;
+  --kink:#121416;
+  --grey:#E3E5E8;
+  --surface:#ffffff;
+  --ink:#111111;
+  --ink-soft:#555555;
+  --ink-faint:#8a8a8a;
+  --line:#e2e2e2;
+  --accent:#DEE780;
+  --accent-soft:#f2f5d8;
+  --fill-soft:#f4f4f4;
+  --fill-dark:#111111;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+  --fs-xs:11.5px; --fs-s:13px; --fs-base:15px; --fs-m:18px; --fs-l:24px; --fs-xl:36px;
+  --t-fast:150ms ease;
+  --col-w:216px;
+  --site-margin:clamp(2rem,1.08rem + 3.92vw,5rem);
+  --tool-margin:clamp(1.25rem,0.5rem + 1.6vw,2rem);
+  --tool-width:96rem;
+  --content-width:80rem;
+  --drawer-w:340px;
+  --stack:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --cols:8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--stack);
+  font-weight:300;
+  background:var(--paper); color:var(--kink);
+  font-size:var(--fs-base); line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+/* ---- the tool keeps its own plain language ---- */
+.tool{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400;background:var(--surface);border-top:1px solid var(--kink);border-bottom:1px solid var(--kink);}
+#playbtns,#scenariotabs{display:contents;}
+#plays #b-save{margin-left:auto;}
+#plays #sclbl{margin-left:var(--s3);}
+.schip{display:inline-flex;align-items:center;gap:var(--s2);}
+.schip .x{color:var(--ink-faint);font-size:13px;line-height:1;}
+.schip .x:hover{color:var(--ink);}
+#compare{padding-top:var(--s4);padding-bottom:var(--s5);border-top:1px solid var(--line);}
+#compare .chead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);}
+#compare .chead h3{font-size:var(--fs-m);font-weight:400;}
+#compare .chead .dimc{font-size:var(--fs-xs);color:var(--ink-faint);margin-left:var(--s2);}
+#compare .chead button{padding:2px 12px;font-size:var(--fs-xs);}
+#compare .chint{margin:var(--s3) 0;font-size:var(--fs-xs);color:var(--ink-faint);}
+#compare .cwrap{overflow-x:auto;}
+#compare table{border-collapse:collapse;width:100%;font-size:var(--fs-xs);min-width:640px;}
+#compare th{text-align:left;font-weight:400;color:var(--ink-faint);padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--line);white-space:nowrap;}
+#compare td{padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--line);vertical-align:top;}
+#compare td.nm{color:var(--ink);max-width:220px;}
+#compare td.num{font-size:var(--fs-s);}
+#compare tr.cur td{background:var(--accent-soft);}
+#compare .best{border-bottom:2px solid var(--ink);}
+#compare .cact{display:flex;gap:var(--s2);}
+#compare .cact button{padding:1px 8px;font-size:var(--fs-xs);border-color:var(--line);}
+#compare .cact button:hover{border-color:var(--ink);opacity:1;}
+#scenario{border-top:1px solid var(--line);padding:var(--s3) var(--s5);font-size:var(--fs-xs);color:var(--ink-faint);text-wrap:pretty;}
+#demohead{font-family:var(--stack);font-weight:300;padding-top:var(--s6);padding-bottom:var(--s5);}
+#demohead .mk{font-size:var(--fs-s);color:var(--ink-faint);margin-bottom:var(--s2);letter-spacing:0.02em;}
+#demohead h2{font-family:var(--stack);font-weight:400;font-size:clamp(26px,3.2vw,38px);line-height:1.1;letter-spacing:-0.015em;margin-bottom:var(--s2);}
+#demohead p{font-size:var(--fs-base);color:var(--ink-soft);max-width:62ch;text-wrap:pretty;}
+.pill{display:inline-block;padding:1px 8px;font-size:var(--fs-xs);background:var(--fill-soft);white-space:nowrap;}
+.pill.dark{background:var(--fill-dark);color:#fff;}
+.pill.acc{background:var(--accent);}
+button{font-family:inherit;font-size:var(--fs-s);padding:var(--s2) var(--s3);border:1px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer;transition:opacity var(--t-fast);}
+button:hover{opacity:.75;}
+button.primary{background:var(--ink);color:#fff;}
+button.on{background:var(--accent);border-color:var(--ink);color:var(--ink);}
+input[type=number]{font-family:inherit;font-size:var(--fs-s);width:96px;padding:2px 6px;border:1px solid var(--line);}
+input[type=number]:focus{outline:none;border-color:var(--ink);}
+label.chk{font-size:var(--fs-xs);display:inline-flex;gap:4px;align-items:center;margin-right:var(--s3);}
+
+#toolbar{border-bottom:1px solid var(--line);padding:var(--s3) var(--s5);display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center;}
+#toolbar .lbl{font-size:var(--fs-xs);color:var(--ink-faint);margin-right:var(--s2);}
+#toolbar button{font-size:var(--fs-xs);padding:var(--s1) var(--s3);border-color:var(--line);}
+#toolbar button:hover{border-color:var(--ink);opacity:1;}
+#plays{border-bottom:1px solid var(--line);padding:var(--s3) var(--s5);display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center;}
+#plays .lbl{font-size:var(--fs-xs);color:var(--ink-faint);margin-right:var(--s2);}
+#playwhy{flex-basis:100%;font-size:var(--fs-xs);color:var(--ink-soft);text-wrap:pretty;}
+#playwhy:empty{display:none;}
+
+.layout{display:flex;align-items:stretch;}
+#boardwrap{flex:1;min-width:0;overflow-x:auto;}
+#board{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--s3);padding-top:var(--s4);padding-bottom:var(--s6);min-width:calc(var(--cols) * 158px);}
+.col{min-width:0;}
+.col h2{font-size:var(--fs-xs);font-weight:400;letter-spacing:0.02em;}
+.col .rule{font-size:var(--fs-xs);color:var(--ink-faint);margin-bottom:var(--s2);line-height:1.35;}
+.nodewrap{position:relative;margin-bottom:6px;}
+.node{border:1px solid var(--line);padding:var(--s2) var(--s3);cursor:pointer;background:var(--surface);transition:border-color var(--t-fast),background var(--t-fast);}
+.node:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+.node:hover{border-color:var(--ink-faint);}
+.node h3{font-size:var(--fs-s);font-weight:400;line-height:1.25;text-wrap:pretty;padding-right:16px;}
+.node .chips{margin-top:3px;font-size:var(--fs-xs);color:var(--ink-faint);}
+.node.sel{background:var(--accent-soft);border-color:var(--ink);}
+.node.sel.focus{outline:none;}
+.node.locked{opacity:.38;}
+.node.locked h3::after{content:" · locked";font-size:var(--fs-xs);color:var(--ink-faint);}
+.node.focus{border-color:var(--ink);outline:none;}
+.nodewrap .more{position:absolute;top:2px;right:3px;font-size:14px;line-height:1;color:var(--ink-faint);padding:3px 5px;cursor:pointer;background:none;border:none;font-family:inherit;}
+.nodewrap .more:hover{color:var(--ink);opacity:1;}
+.nodewrap .more:focus-visible{outline:2px solid var(--ink);outline-offset:1px;}
+
+#drawer{position:fixed;top:0;right:0;bottom:0;width:var(--drawer-w);background:var(--surface);border-left:1px solid var(--ink);box-shadow:-12px 0 32px rgba(0,0,0,.10);padding:var(--s5);font-size:var(--fs-s);overflow-y:auto;z-index:30;transform:translateX(102%);transition:transform 200ms ease;}
+#drawer.open{transform:none;}
+#drawer .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);margin-bottom:var(--s2);}
+#drawer .dhead button{padding:2px 10px;}
+#drawer .dact{margin-top:var(--s4);}
+#drawer .dact button{width:100%;text-align:center;}
+#drawer h2{font-size:var(--fs-m);font-weight:400;text-wrap:balance;}
+#drawer .dim{font-size:var(--fs-xs);color:var(--ink-faint);}
+#drawer .dsub{margin-top:var(--s2);font-size:var(--fs-xs);color:var(--ink-faint);text-wrap:pretty;}
+#drawer p.read{margin-top:var(--s3);color:var(--ink-soft);text-wrap:pretty;}
+#drawer .lockmsg{margin-top:var(--s3);background:var(--fill-dark);color:#fff;padding:var(--s2) var(--s3);font-size:var(--fs-xs);}
+#drawer .detail{margin-top:var(--s4);}
+#drawer .detail .dr{display:flex;gap:var(--s3);padding:var(--s2) 0;border-top:1px solid var(--line);font-size:var(--fs-xs);}
+#drawer .detail .dr .dk{width:72px;flex-shrink:0;color:var(--ink-faint);}
+#drawer .detail .dr span:last-child{color:var(--ink);text-wrap:pretty;}
+#drawer .scores{margin-top:var(--s4);}
+#drawer .scores .sr{display:flex;gap:var(--s2);align-items:baseline;padding:var(--s2) 0;border-top:1px solid var(--line);font-size:var(--fs-xs);}
+#drawer .scores .sr .k{width:52px;color:var(--ink-faint);flex-shrink:0;}
+#drawer .scores .sr .bar{display:inline-block;height:10px;background:var(--accent);vertical-align:middle;flex-shrink:0;}
+#drawer .scores .sr.riskrow .bar{background:var(--fill-dark);}
+#drawer .scores .sr .why{color:var(--ink-soft);}
+#drawer ul.facts{margin-top:var(--s4);list-style:none;}
+#drawer ul.facts li{font-size:var(--fs-xs);padding:var(--s2) 0;border-top:1px solid var(--line);text-wrap:pretty;}
+#drawer ul.facts li .src{display:block;color:var(--ink-faint);margin-top:2px;}
+#drawer ul.facts li a.src{text-decoration:underline;text-underline-offset:2px;}
+#drawer ul.facts li details.q{margin-top:var(--s2);}
+#drawer ul.facts li details.q summary{color:var(--ink-faint);cursor:pointer;list-style:none;}
+#drawer ul.facts li details.q summary::-webkit-details-marker{display:none;}
+#drawer ul.facts li details.q summary::before{content:"+ ";}
+#drawer ul.facts li details.q[open] summary::before{content:"− ";}
+#drawer ul.facts li details.q summary:hover{color:var(--ink);}
+#drawer ul.facts li details.q blockquote{margin-top:var(--s2);padding-left:var(--s3);border-left:2px solid var(--line);color:var(--ink-soft);text-wrap:pretty;}
+#drawer ul.facts li a.src:hover{color:var(--ink);}
+#drawer .hint{margin-top:var(--s4);font-size:var(--fs-xs);color:var(--ink-faint);}
+
+#scorebar{position:sticky;bottom:0;border-top:1px solid var(--ink);background:var(--surface);padding:var(--s3) var(--s5);z-index:5;}
+#scorebar .cells{display:flex;gap:var(--s6);align-items:flex-start;flex-wrap:wrap;}
+#scorebar .cell{min-width:120px;}
+#scorebar .cell .k{font-size:var(--fs-xs);color:var(--ink-faint);}
+#scorebar .cell .v{font-size:var(--fs-m);}
+#scorebar .cell .v small{font-size:var(--fs-xs);color:var(--ink-soft);}
+#scorebar .cell .sbar{display:block;height:8px;background:var(--accent);margin-top:4px;}
+#scorebar .cell .riskbar{background:var(--fill-dark);}
+#scorebar .verdict span{padding:2px 10px;font-size:var(--fs-s);}
+#scorebar .verdict.ok span{background:var(--accent);}
+#scorebar .verdict.mid span{background:var(--fill-soft);}
+#scorebar .verdict.bad span{background:var(--fill-dark);color:#fff;}
+#scorebar .exp{flex:1;min-width:220px;font-size:var(--fs-xs);color:var(--ink-soft);text-wrap:pretty;}
+#scorebar .chain{margin-top:var(--s2);border-top:1px solid var(--line);padding-top:var(--s2);font-size:var(--fs-xs);color:var(--ink-soft);text-wrap:pretty;}
+#scorebar .chain b{font-weight:600;color:var(--ink);}
+
+section.assumps{border-top:1px solid var(--line);padding:var(--s5);}
+section.assumps .srchead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s4);}
+section.assumps .srchead h2{font-size:var(--fs-m);font-weight:400;}
+section.assumps .srchead button{padding:2px 12px;font-size:var(--fs-xs);}
+#assumpbody{display:none;}
+#assumpbody.open{display:block;}
+#assump{margin-top:var(--s3);font-size:var(--fs-xs);color:var(--ink-soft);columns:2;column-gap:var(--s7);list-style:none;}
+#assump li{margin-bottom:var(--s2);break-inside:avoid;}
+@media (max-width:800px){#assump{columns:1;}}
+
+footer.sources{border-top:1px solid var(--line);padding:var(--s5);}
+footer.sources .srchead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s4);}
+footer.sources .srchead button{padding:2px 12px;font-size:var(--fs-xs);}
+footer.sources .dimc{font-size:var(--fs-xs);color:var(--ink-faint);margin-left:var(--s2);}
+#srcbody{display:none;}
+#srcbody.open{display:block;}
+footer.sources h2{font-size:var(--fs-m);font-weight:400;}
+footer.sources p{font-size:var(--fs-xs);color:var(--ink-soft);max-width:80ch;margin-top:var(--s2);text-wrap:pretty;}
+footer.sources ol{margin-top:var(--s3);padding-left:1.3em;columns:2;column-gap:var(--s7);}
+footer.sources li{font-size:var(--fs-xs);color:var(--ink-soft);margin-bottom:var(--s1);break-inside:avoid;}
+footer.sources a{color:var(--ink);}
+
+#scorebar .sbmini{display:none;}
+#scorebar .sbmini button{padding:2px 10px;font-size:var(--fs-xs);}
+@media (max-width:640px){
+  #drawer{width:100%;}
+  #scorebar .sbmini{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);font-size:var(--fs-s);}
+  #scorebar:not(.open) .cells,#scorebar:not(.open) .chain{display:none;}
+  #scorebar.open{max-height:55vh;overflow-y:auto;}
+}
+/* ---- one page grid: balanced gutters, centered content ---- */
+#demohead,#toolbar,#plays,#board,#compare,#scenario,section.assumps,footer.sources{
+  max-width:calc(var(--tool-width) + 2*var(--tool-margin));margin-inline:auto;
+  padding-left:var(--tool-margin);padding-right:var(--tool-margin);
+}
+#scorebar{padding-left:0;padding-right:0;}
+#scorebar .sbmini,#scorebar .cells,#scorebar .chain{
+  max-width:calc(var(--tool-width) + 2*var(--tool-margin));margin-inline:auto;
+  padding-left:var(--tool-margin);padding-right:var(--tool-margin);
+}
+#scorebar .chain{padding-top:var(--s2);}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+
+footer.credit{border-top:1px solid var(--grey);padding:var(--s5) var(--tool-margin);max-width:calc(var(--tool-width) + 2*var(--tool-margin));margin-inline:auto;}
+footer.credit p{font-size:var(--fs-xs);color:var(--ink-faint);}
+footer.credit a{color:var(--ink);}
+</style>
+</head>
+<body>
+<section id="demo" class="tool">
+<div id="demohead">
+  <div class="mk">Decision board</div>
+  <h2>Go-to-market for a B2B AI product</h2>
+  <p>Pick a card in each column, or start from a play. Cards that cannot coexist with your picks lock and say why.</p>
+</div>
+<div id="toolbar">
+  <span class="lbl">Simulator:</span>
+  <button id="b-export">Export decision .md</button>
+  <button id="b-clear">Reset</button>
+</div>
+
+<div id="plays">
+  <span class="lbl">Start from a play:</span>
+  <span id="playbtns"></span>
+  <span id="sclbl" class="lbl" hidden>Your scenarios:</span>
+  <span id="scenariotabs"></span>
+  <button id="b-save">+ Save as scenario</button>
+  <span id="playwhy"></span>
+</div>
+
+<div class="layout">
+  <div id="boardwrap">
+    <div id="board"></div>
+  </div>
+  <aside id="drawer">
+    <div class="dim">Detail</div>
+    <h2>Pick a card</h2>
+    <p class="read">Click any card to read its data, its scores, and why it is locked or open. Click again on a selected card to remove it from the path.</p>
+    <div class="hint" id="drawerhint">Scores are model estimates, 1 to 5, built on the verified facts shown with each card.</div>
+  </aside>
+</div>
+
+<div id="scorebar"></div>
+
+<div id="compare" hidden></div>
+
+<div id="scenario">Demo scenario: a fictional founder. B2B AI product, founder-scale team, EU home base. The scores are written from that position; the market facts on every card are real, verbatim-verified, and linked.</div>
+
+<section class="assumps">
+  <div class="srchead">
+    <h2>Model assumptions</h2>
+    <button id="b-assump-t">Show</button>
+  </div>
+  <div id="assumpbody"><ul id="assump"></ul></div>
+</section>
+
+
+
+<footer class="sources">
+  <div class="srchead">
+    <h2>Sources <span id="srccount" class="dimc"></span></h2>
+    <button id="b-sources">Show</button>
+  </div>
+  <div id="srcbody">
+    <p id="srcnote">Every cited fact was verified against its fetched source with a verbatim-quote check on 2026-08-14; facts that could not be verified were dropped, not softened. Where an institution's own page blocks automated access (some Gartner, Canalys, and MIT material), the fact was verified against established-media coverage of the original, and the source line names both. The scores and multipliers are explicit modelling judgment layered on top of those facts, listed under Assumptions.</p>
+    <ol id="srclist"></ol>
+  </div>
+</footer>
+</section>
+<footer class="credit">
+  <p>Built with Decision Board — <a href="https://keftek.com/lab/decision-simulator">keftek.com/lab/decision-simulator</a></p>
+</footer>
+<script>
+// ================= DATA =================
+// Everything between this line and the ENGINE line is yours to write.
+// Everything below the ENGINE line, and the whole <style> block, you copy
+// unchanged. Do not add CSS. Do not choose a font or a colour. The board's
+// look is not a decision you make.
+//
+// SCORECARD  {k,label,short,desc,chip?,inverted?}  exactly one inverted; 2-3 chip:true
+// DIMS       {id,title,say,name?,max,options:[...]}
+//            title   a noun phrase naming the variable: "1 \u00b7 Heat source"
+//            say     path-sentence fragment with a {} slot: "paid through {}"
+//            name    true on the one or two axes that name a saved scenario
+//            options {id,title,read,sc:{k:[score,"why"]},facts:[{t,q,s}]}
+// SRC        {key:{n:"Source name, year",u:"https://..."}}
+// DETAIL     {optionId:{play,gain,give,works}}
+// LOCKS      [{opt,test(sel) -> reason string | false}]   structural only
+// TENSIONS   [{when:[optionId,...],text}]                 legal but uncomfortable
+// FRAGILE    [{test(sel) -> bool,text}]
+// PLAYS      [{name,why,picks:{axisId:[optionId,...]}}]
+// ASSUMPTIONS[{k,t}]
+
+const SRC = {};
+const DIMS = [];
+const DETAIL = {};
+const SCORECARD = [];
+const LOCKS = [];
+const TENSIONS = [];
+const FRAGILE = [];
+const PLAYS = [];
+const ASSUMPTIONS = [];
+
+// ================= ENGINE =================
+const sel={};
+let focusId=null;
+function has(s,id){return Object.values(s).flat().includes(id);}
+function optById(id){for(const d of DIMS){for(const o of d.options){if(o.id===id)return{dim:d,opt:o};}}return null;}
+function lockReason(id){
+  for(const L of LOCKS){if(L.opt===id){const r=L.test(sel);if(r)return r;}}
+  return null;
+}
+
+function pathProfile(selection){
+  const all=Object.values(selection).flat().map(optById).filter(Boolean);
+  // each axis contributes once: average within the axis, then across axes,
+  // so a three-industry pick does not outvote a single-pick column
+  const axes=DIMS.map(d=>(selection[d.id]||[]).map(optById).filter(Boolean)).filter(a=>a.length);
+  const dims={};
+  SCORECARD.forEach(d=>{
+    dims[d.k]=axes.length?axes.reduce((sum,cards)=>sum+cards.reduce((x,c)=>x+c.opt.sc[d.k][0],0)/cards.length,0)/axes.length:0;
+  });
+  const complete=DIMS.every(d=>(selection[d.id]||[]).length>0);
+  let profile=null;
+  if(complete&&CORE.length){
+    const hi=CORE.reduce((a,b)=>dims[a.k]>=dims[b.k]?a:b);
+    const lo=CORE.reduce((a,b)=>dims[a.k]<=dims[b.k]?a:b);
+    const r=INV?dims[INV.k]:null;
+    const invName=INV?INV.label.toLowerCase():"";
+    const riskLine=r===null?"":r<2.5?(INV.label+" is in hand."):r<3.5?(INV.label+" runs elevated: know which "+invName+" you are deliberately holding."):(INV.label+" runs heavy; this path needs a reason to be worth it.");
+    let cls,tag;
+    if(r!==null&&r>=3.5){cls="bad";tag="high "+invName;}
+    else if(dims[lo.k]>=3){cls="ok";tag="balanced";}
+    else{cls="mid";tag="trades "+lo.label.toLowerCase()+" for "+hi.label.toLowerCase();}
+    profile={cls,tag,text:"Strongest dimension: "+hi.label.toLowerCase()+" ("+dims[hi.k].toFixed(1)+"); weakest: "+lo.label.toLowerCase()+" ("+dims[lo.k].toFixed(1)+"). "+riskLine};
+  }
+  return {dims,complete,profile,picks:all.length,axes:axes.length};
+}
+
+// ================= RENDER =================
+function fitChips(o){return CHIPS.map(d=>(d.short||d.label.toLowerCase())+" "+o.sc[d.k][0]).join(" · ");}
+function renderBoard(){
+  const board=document.getElementById("board");
+  board.innerHTML="";
+  DIMS.forEach(d=>{
+    const col=document.createElement("div");col.className="col";
+    col.innerHTML="<h2>"+esc(d.title)+"</h2><div class='rule'>"+(d.max===1?"pick one":"pick up to "+d.max)+"</div>";
+    d.options.forEach(o=>{
+      const wrap=document.createElement("div");
+      wrap.className="nodewrap";
+      const n=document.createElement("div");
+      n.className="node";n.id="node-"+o.id;
+      n.setAttribute("role","button");n.tabIndex=0;
+      n.innerHTML="<h3>"+esc(o.title)+"</h3><div class='chips'>"+esc(fitChips(o))+"</div>";
+      n.addEventListener("click",()=>onNode(d,o));
+      n.addEventListener("keydown",e=>{
+        if(e.key==="Enter"||e.key===" "){e.preventDefault();onNode(d,o);}
+      });
+      const more=document.createElement("button");
+      more.className="more";more.type="button";
+      more.setAttribute("aria-label","Details: "+o.title);
+      more.textContent="+";
+      more.addEventListener("click",e=>{e.stopPropagation();openDetail(o.id);});
+      wrap.appendChild(n);wrap.appendChild(more);
+      col.appendChild(wrap);
+    });
+    board.appendChild(col);
+  });
+}
+function onNode(d,o){
+  focusId=o.id;
+  if(lockReason(o.id)){openDetail(o.id);return;}
+  activePlay=null;
+  const cur=sel[d.id]||[];
+  const i=cur.indexOf(o.id);
+  if(i>=0)cur.splice(i,1);
+  else{if(d.max===1)cur.length=0;else if(cur.length>=d.max)cur.shift();cur.push(o.id);}
+  sel[d.id]=cur;
+  pruneInvalid();
+  refresh();
+}
+function pruneInvalid(){
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const d of DIMS){
+      const cur=sel[d.id]||[];
+      for(const id of [...cur]){
+        if(lockReason(id)){cur.splice(cur.indexOf(id),1);changed=true;}
+      }
+    }
+  }
+}
+function renderDrawer(){
+  const dr=document.getElementById("drawer");
+  if(!focusId){return;}
+  const r=optById(focusId);if(!r)return;
+  const o=r.opt, reason=lockReason(o.id);
+  const selNow=(sel[r.dim.id]||[]).includes(o.id);
+  let h="<div class='dhead'><div class='dim'>"+esc(r.dim.title)+"</div><button id='d-close'>Close</button></div><h2>"+esc(o.title)+"</h2>";
+  if(r.dim.sub)h+="<div class='dsub'>"+esc(r.dim.sub)+"</div>";
+  if(reason)h+="<div class='lockmsg'>Locked: "+esc(reason)+"</div>";
+  else if(selNow)h+="<div style='margin-top:8px'><span class='pill acc'>on the path</span></div>";
+  h+="<p class='read'>"+esc(o.read)+"</p>";
+  const dt=DETAIL[o.id];
+  if(dt){
+    h+="<div class='detail'>";
+    h+="<div class='dr'><span class='dk'>In practice</span><span>"+esc(dt.play)+"</span></div>";
+    h+="<div class='dr'><span class='dk'>You gain</span><span>"+esc(dt.gain)+"</span></div>";
+    h+="<div class='dr'><span class='dk'>You give up</span><span>"+esc(dt.give)+"</span></div>";
+    h+="<div class='dr'><span class='dk'>Works when</span><span>"+esc(dt.works)+"</span></div>";
+    h+="</div>";
+  }
+  h+="<div class='scores'>";
+  SCORECARD.forEach(dm=>{
+    const k=dm.k, v=o.sc[k][0], why=o.sc[k][1];
+    h+="<div class='sr"+(dm.inverted?" riskrow":"")+"'><span class='k'>"+esc(dm.label.toLowerCase())+"</span><span class='bar' style='width:"+(v*16)+"px'></span><span>"+v+"</span><span class='why'>"+esc(why)+"</span></div>";
+  });
+  h+="</div>";
+  if(o.facts&&o.facts.length){
+    h+="<ul class='facts'>";
+    o.facts.forEach(f=>{
+      const src=SRC[f.s];
+      h+="<li>"+esc(f.t);
+      h+=src.u?"<a class='src' href='"+esc(src.u)+"' target='_blank' rel='noopener'>"+esc(src.n)+"</a>":"<span class='src'>"+esc(src.n)+"</span>";
+      if(f.q)h+="<details class='q'><summary>Verbatim from the source</summary><blockquote>"+esc(f.q)+"</blockquote></details>";
+      h+="</li>";
+    });
+    h+="</ul>";
+  }
+  h+="<div class='hint'>Scores are model estimates on top of the cited facts."+(INV?" "+esc(invName())+" runs the other way: higher is worse.":"")+"</div>";
+  if(!reason)h+="<div class='dact'><button id='d-act' class='"+(selNow?"":"primary")+"'>"+(selNow?"Remove from path":"Add to path")+"</button></div>";
+  dr.innerHTML=h;
+  const cb=document.getElementById("d-close");
+  if(cb)cb.addEventListener("click",closeDetail);
+  const ab=document.getElementById("d-act");
+  if(ab)ab.addEventListener("click",()=>{onNode(r.dim,o);});
+}
+function openDetail(id){focusId=id;document.getElementById("drawer").classList.add("open");refresh();}
+function closeDetail(){document.getElementById("drawer").classList.remove("open");}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDetail();});
+document.addEventListener("click",e=>{
+  const dr=document.getElementById("drawer");
+  if(dr.classList.contains("open")&&!e.target.closest("#drawer")&&!e.target.closest(".more")&&!e.target.closest(".node"))closeDetail();
+});
+
+function pathSentence(){
+  const parts=[];
+  for(const d of DIMS){
+    const ids=sel[d.id]||[];
+    if(!ids.length)return null;
+    const v=ids.map(id=>optById(id).opt.title.replace(/,.*$/,"")).join(" + ");
+    const tpl=d.say||(d.title.replace(/^\s*\d+\s*\u00b7\s*/,"").toLowerCase()+" {}");
+    parts.push(tpl.indexOf("{}")<0?tpl+" "+v:tpl.replace("{}",v));
+  }
+  return "The path in words: "+parts.join(", ")+".";
+}
+const scenarios=[];
+let compareOpen=false;
+let activePlay=null;
+function scenarioName(){
+  if(activePlay)return activePlay;
+  const namers=DIMS.filter(d=>d.name);
+  const src=namers.length?namers:DIMS;
+  const parts=src.map(d=>{const ids=sel[d.id]||[];return ids.length?optById(ids[0]).opt.title.replace(/,.*$/,""):null;}).filter(Boolean).slice(0,2);
+  return parts.length?parts.join(" \u00b7 "):"Scenario "+(scenarios.length+1);
+}
+function saveScenario(){
+  const p=pathProfile(sel);
+  if(!p.complete){
+    const why=document.getElementById("playwhy");
+    why.textContent="Pick a card in every column before saving — a partial path cannot be compared against a complete one.";
+    return;
+  }
+  let name=scenarioName(), n=2;
+  while(scenarios.some(x=>x.name===name)){name=scenarioName()+" ("+n+")";n++;}
+  scenarios.push({name,picks:JSON.parse(JSON.stringify(sel)),dims:{...p.dims},complete:p.complete,tag:p.profile?p.profile.tag:"incomplete",sentence:pathSentence()});
+  renderTabs();renderCompare();
+}
+function sameAsCurrent(sc){
+  const a=JSON.stringify(Object.entries(sc.picks).map(([k,v])=>[k,[...v].sort()]).sort());
+  const b=JSON.stringify(Object.entries(sel).filter(([,v])=>v.length).map(([k,v])=>[k,[...v].sort()]).sort());
+  return a===b;
+}
+function renderTabs(){
+  const row=document.getElementById("scenariotabs"), lbl=document.getElementById("sclbl");
+  row.innerHTML="";
+  lbl.hidden=!scenarios.length;
+  scenarios.forEach((sc,i)=>{
+    const b=document.createElement("button");
+    b.className="schip"+(sameAsCurrent(sc)?" on":"");
+    b.innerHTML="<span>"+esc(sc.name)+"</span><span class='x' title='Remove'>\u00d7</span>";
+    b.addEventListener("click",e=>{
+      if(e.target.classList.contains("x")){scenarios.splice(i,1);renderTabs();renderCompare();return;}
+      loadScenario(i);
+    });
+    row.appendChild(b);
+  });
+}
+function loadScenario(i){
+  const sc=scenarios[i];
+  Object.keys(sel).forEach(k=>delete sel[k]);
+  Object.entries(sc.picks).forEach(([k,v])=>sel[k]=[...v]);
+  activePlay=sc.name;focusId=null;
+  document.querySelectorAll("#playbtns button.on").forEach(x=>x.classList.remove("on"));
+  document.getElementById("playwhy").textContent=sc.sentence?sc.sentence.replace(/^The path in words: /,""):"";
+  refresh();
+}
+function renderCompare(){
+  const el=document.getElementById("compare");
+  if(!scenarios.length){el.hidden=true;el.innerHTML="";return;}
+  el.hidden=false;
+  const best={};
+  CORE.forEach(d=>{best[d.k]=Math.max(...scenarios.map(s=>s.dims[d.k]??0));});
+  const bestInv=INV?Math.min(...scenarios.map(s=>s.dims[INV.k]??0)):null;
+  let h="<div class='chead'><h3>Saved scenarios <span class='dimc'>"+scenarios.length+" saved</span></h3><button id='b-compare'>"+(compareOpen?"Hide":"Compare")+"</button></div>";
+  if(!compareOpen){
+    el.innerHTML=h;
+    const t=document.getElementById("b-compare");
+    if(t)t.addEventListener("click",()=>{compareOpen=true;renderCompare();});
+    return;
+  }
+  h+="<p class='chint'>Best score per dimension is underlined."+(INV?" "+esc(invName())+" runs the other way: lower is better.":"")+"</p><div class='cwrap'><table><thead><tr><th>Scenario</th>";
+  SCORECARD.forEach(d=>{h+="<th>"+esc(d.label)+(d.inverted?" ↓":"")+"</th>";});
+  h+="<th>Profile</th><th></th></tr></thead><tbody>";
+  scenarios.forEach((sc,i)=>{
+    h+="<tr"+(sameAsCurrent(sc)?" class='cur'":"")+"><td class='nm'>"+esc(sc.name)+"</td>";
+    SCORECARD.forEach(d=>{
+      const v=sc.dims[d.k]??0;
+      const isBest=d.inverted?v===bestInv:v===best[d.k];
+      h+="<td class='num'><span"+(isBest?" class='best'":"")+">"+v.toFixed(1)+"</span></td>";
+    });
+    h+="<td>"+esc(sc.tag)+"</td><td><div class='cact'><button data-load='"+i+"'>Load</button><button data-del='"+i+"'>Remove</button></div></td></tr>";
+  });
+  h+="</tbody></table></div>";
+  el.innerHTML=h;
+  const tg=document.getElementById("b-compare");
+  if(tg)tg.addEventListener("click",()=>{compareOpen=false;renderCompare();});
+  el.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadScenario(+b.dataset.load)));
+  el.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    scenarios.splice(+b.dataset.del,1);renderTabs();renderCompare();
+  }));
+}
+let sbOpen=false;
+function renderScore(){
+  const p=pathProfile(sel);
+  const bar=document.getElementById("scorebar");
+  bar.classList.toggle("open",sbOpen);
+  const mini=p.profile?(p.profile.tag+(INV?" \u00b7 "+INV.label.toLowerCase()+" "+p.dims[INV.k].toFixed(1):"")):(p.picks?"path incomplete":"scoreboard");
+  let h="<div class='sbmini'><span>"+esc(mini)+"</span><button id='sb-toggle'>"+(sbOpen?"hide":"details")+"</button></div>";
+  h+="<div class='cells'>";
+  SCORECARD.forEach(d=>{
+    const v=p.picks?p.dims[d.k]:0;
+    h+="<div class='cell'><div class='k'>"+esc(d.label)+(d.inverted?", higher is worse":"")+"</div><div class='v'>"+(p.picks?v.toFixed(1):"\u00b7")+"</div><span class='sbar"+(d.inverted?" riskbar":"")+"' style='width:"+(v*16)+"px'></span></div>";
+  });
+  if(p.profile)h+="<div class='cell verdict "+p.profile.cls+"'><div class='k'>Path profile, model estimate</div><div class='v'><span>"+esc(p.profile.tag)+"</span></div></div>";
+  let exp=[];
+  if(p.profile)exp.push(p.profile.text);
+  const tens=TENSIONS.filter(t=>t.when.every(w=>has(sel,w)));
+  tens.forEach(t=>exp.push("Tension: "+t.text));
+  FRAGILE.forEach(f=>{if(f.test(sel))exp.push("Tension: "+f.text);});
+  if(!p.picks)exp.push("Pick one card per column. The scoreboard computes as you go; locked cards explain themselves when clicked.");
+  else if(!p.complete)exp.push("Path incomplete: the profile appears when every column has a pick.");
+  h+="<div class='exp'>"+exp.map(e=>"<div>"+esc(e)+"</div>").join("")+"</div></div>";
+  const words=pathSentence();
+  if(words)h+="<div class='chain'><div>"+esc(words)+"</div></div>";
+  bar.innerHTML=h;
+  const tg=document.getElementById("sb-toggle");
+  if(tg)tg.addEventListener("click",()=>{sbOpen=!sbOpen;renderScore();});
+}
+function refresh(){
+  pruneInvalid();
+  DIMS.forEach(d=>d.options.forEach(o=>{
+    const n=document.getElementById("node-"+o.id);
+    const on=(sel[d.id]||[]).includes(o.id), locked=!!lockReason(o.id);
+    n.classList.toggle("sel",on);
+    n.classList.toggle("locked",locked);
+    n.classList.toggle("focus",focusId===o.id);
+    n.setAttribute("aria-pressed",on?"true":"false");
+    if(locked)n.setAttribute("aria-disabled","true"); else n.removeAttribute("aria-disabled");
+  }));
+  renderDrawer();
+  renderScore();
+  renderTabs();
+  renderCompare();
+}
+function renderPlays(){
+  const row=document.getElementById("plays");
+  const why=document.getElementById("playwhy");
+  const host=document.getElementById("playbtns");
+  PLAYS.forEach(p=>{
+    const b=document.createElement("button");
+    b.textContent=p.name;
+    b.addEventListener("click",()=>{
+      Object.keys(sel).forEach(k=>delete sel[k]);
+      Object.entries(p.picks).forEach(([k,v])=>sel[k]=[...v]);
+      focusId=null;
+      activePlay=p.name;
+      why.textContent=p.why;
+      refresh();
+      document.querySelectorAll("#playbtns button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+    });
+    host.appendChild(b);
+  });
+}
+function renderAssump(){
+  const root=document.getElementById("assump");
+  root.innerHTML=ASSUMPTIONS.map(a=>"<li><b>"+esc(a.k)+":</b> "+esc(a.t)+"</li>").join("");
+}
+function renderSources(){
+  const root=document.getElementById("srclist");
+  const seen=new Set();
+  DIMS.forEach(d=>d.options.forEach(o=>(o.facts||[]).forEach(f=>seen.add(f.s))));
+  const list=[...seen].map(k=>SRC[k]).filter(Boolean).sort((a,b)=>a.n.localeCompare(b.n));
+  list.forEach(s=>{
+    const li=document.createElement("li");
+    li.innerHTML=s.u?"<a href='"+esc(s.u)+"' target='_blank' rel='noopener'>"+esc(s.n)+"</a>":esc(s.n);
+    root.appendChild(li);
+  });
+  const cnt=document.getElementById("srccount");
+  if(cnt)cnt.textContent=list.length+" sources";
+}
+
+
+// ================= EXPORT =================
+function buildMd(){
+  const d=new Date();
+  const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const p=pathProfile(sel);
+  let md="# Go-to-market decision plate \u00b7 "+ds+"\n\n";
+  md+="Composed with Decision Board (keftek.com/lab/decision-simulator). Scores are declared judgment on top of the cited facts; pressure-test before adopting.\n\n";
+  md+="## The path\n\n";
+  const words=pathSentence();
+  if(words)md+=words+"\n\n";
+  DIMS.forEach(dim=>{
+    const ids=sel[dim.id]||[];
+    md+="### "+dim.title.replace(/^\d+ \u00b7 /,"")+"\n\n";
+    if(!ids.length){md+="_Not chosen._\n\n";return;}
+    ids.forEach(id=>{
+      const o=optById(id).opt;
+      md+="**"+o.title+"**\n\n"+o.read+"\n\n";
+      const dt=DETAIL[id];
+      if(dt){md+="- In practice: "+dt.play+"\n- You gain: "+dt.gain+"\n- You give up: "+dt.give+"\n- Works when: "+dt.works+"\n";}
+      md+="\nScores (model estimate): "+SCORECARD.map(d=>d.label.toLowerCase()+" "+o.sc[d.k][0]).join(", ")+".\n\n";
+      (o.facts||[]).forEach(f=>{const sc=SRC[f.s];md+="- "+f.t+" \u2014 "+sc.n+(sc.u?" \u2014 "+sc.u:"")+"\n";if(f.q)md+="  - Verbatim: \""+f.q+"\"\n";});
+      md+="\n";
+    });
+  });
+  md+="## Path profile\n\n";
+  if(p.picks){
+    SCORECARD.forEach(dm=>{md+="- "+dm.label+(dm.inverted?" (higher is worse)":"")+": "+p.dims[dm.k].toFixed(1)+" of 5\n";});
+    if(p.profile)md+="- Profile ("+p.profile.tag+"): "+p.profile.text+"\n";
+    else md+="- _Path incomplete: the profile appears when every column has a pick._\n";
+  }else{md+="_No cards picked._\n";}
+  const tens=TENSIONS.filter(t=>t.when.every(w=>has(sel,w))).map(t=>t.text)
+    .concat(FRAGILE.filter(f=>f.test(sel)).map(f=>f.text));
+  if(tens.length){md+="\n## Tensions\n\n";tens.forEach(t=>md+="- "+t+"\n");}
+  if(scenarios.length){
+    md+="\n## Saved scenarios\n\n| Scenario | "+SCORECARD.map(d=>d.label+(d.inverted?" (lower is better)":"")).join(" | ")+" | Profile |\n|"+Array(SCORECARD.length+2).fill("---").join("|")+"|\n";
+    scenarios.forEach(sc=>{md+="| "+sc.name+" | "+SCORECARD.map(d=>(sc.dims[d.k]??0).toFixed(1)).join(" | ")+" | "+sc.tag+" |\n";});
+    md+="\n";
+    scenarios.forEach(sc=>{if(sc.sentence)md+="- **"+sc.name+"** \u2014 "+sc.sentence.replace(/^The path in words: /,"")+"\n";});
+  }
+  md+="\n## Model assumptions\n\n";
+  ASSUMPTIONS.forEach(a=>md+="- "+a.k+": "+a.t+"\n");
+  md+="\n---\nBuilt with Decision Board \u2014 https://keftek.com/lab/decision-simulator/ \u00b7 \u00a9 2026 Keftek\n";
+  return md;
+}
+
+// ================= WIRE UP =================
+document.getElementById("b-assump-t").addEventListener("click",()=>{
+  const b=document.getElementById("assumpbody");
+  b.classList.toggle("open");
+  document.getElementById("b-assump-t").textContent=b.classList.contains("open")?"Hide":"Show";
+});
+document.getElementById("b-sources").addEventListener("click",()=>{
+  const b=document.getElementById("srcbody");
+  b.classList.toggle("open");
+  document.getElementById("b-sources").textContent=b.classList.contains("open")?"Hide":"Show";
+});
+document.getElementById("b-save").addEventListener("click",saveScenario);
+document.getElementById("b-clear").addEventListener("click",()=>{Object.keys(sel).forEach(k=>delete sel[k]);focusId=null;activePlay=null;document.querySelectorAll("#plays button").forEach(x=>x.classList.remove("on"));document.getElementById("playwhy").textContent="";refresh();});
+document.getElementById("b-export").addEventListener("click",()=>{
+  const blob=new Blob([buildMd()],{type:"text/markdown"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="decision-board.md";a.click();URL.revokeObjectURL(a.href);
+});
+(()=>{const dh=document.getElementById("drawerhint");
+  if(dh&&INV)dh.textContent=dh.textContent+" "+invName()+" runs the other way: higher is worse.";})();
+document.documentElement.style.setProperty("--cols",DIMS.length);
+renderBoard();
+renderPlays();
+renderAssump();
+renderSources();
+refresh();
+</script>
+</body>
+</html>
