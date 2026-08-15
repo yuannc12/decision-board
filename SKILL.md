@@ -183,10 +183,12 @@ the drawer, the scoreboard, the locked-card treatment, the mobile collapse.
 All of it lives in `board.template.html`, which ships beside this skill. Your
 job is the data layer and nothing else.
 
-**Get the template.** It sits next to this file in the skill package. If you
-are reading only `SKILL.md`, fetch it once:
+**Get the template.** It sits next to this file in the skill package, at
+`assets/board.template.html`. Use that copy — it is the one you were given,
+and it needs no network at all. Only if you were handed `SKILL.md` on its
+own, fetch it once from the repository the skill comes from:
 
-    https://keftek.com/lab/decision-simulator/board.template.html
+    https://raw.githubusercontent.com/yuannc12/decision-board/main/assets/board.template.html
 
 If you cannot obtain the template, stop and tell the user the board cannot be
 built to spec, and ask them for the file. **Do not invent a visual design.**
