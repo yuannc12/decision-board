@@ -64,6 +64,11 @@ body{
 #compare .cact{display:flex;gap:var(--s2);}
 #compare .cact button{padding:1px 8px;font-size:var(--fs-xs);border-color:var(--line);}
 #compare .cact button:hover{border-color:var(--ink);opacity:1;}
+#exclusions{border-bottom:1px solid var(--line);padding-top:var(--s3);padding-bottom:var(--s3);}
+#exclusions .lbl{font-size:var(--fs-xs);color:var(--ink-faint);letter-spacing:0.02em;margin-bottom:var(--s2);}
+#exclusions ul{list-style:none;display:grid;gap:var(--s1);max-width:96ch;}
+#exclusions li{font-size:var(--fs-xs);color:var(--ink-soft);text-wrap:pretty;padding-left:1.1em;text-indent:-1.1em;}
+#exclusions li::before{content:"\2014\00a0";color:var(--ink-faint);}
 #scenario{border-top:1px solid var(--line);padding:var(--s3) var(--s5);font-size:var(--fs-xs);color:var(--ink-faint);text-wrap:pretty;}
 #demohead{font-family:var(--stack);font-weight:300;padding-top:var(--s6);padding-bottom:var(--s5);}
 #demohead .mk{font-size:var(--fs-s);color:var(--ink-faint);margin-bottom:var(--s2);letter-spacing:0.02em;}
@@ -192,7 +197,7 @@ footer.sources a{color:var(--ink);}
   #scorebar.open{max-height:55vh;overflow-y:auto;}
 }
 /* ---- one page grid: balanced gutters, centered content ---- */
-#demohead,#toolbar,#plays,#board,#compare,#scenario,section.assumps,footer.sources{
+#demohead,#toolbar,#plays,#exclusions,#board,#compare,#scenario,section.assumps,footer.sources{
   max-width:calc(var(--tool-width) + 2*var(--tool-margin));margin-inline:auto;
   padding-left:var(--tool-margin);padding-right:var(--tool-margin);
 }
@@ -231,6 +236,10 @@ footer.credit a{color:var(--ink);}
   <span id="playwhy"></span>
 </div>
 
+<div id="exclusions" hidden>
+  <div class="lbl">Ruled out before scoring</div>
+  <ul></ul>
+</div>
 <div class="layout">
   <div id="boardwrap">
     <div id="board"></div>
@@ -292,6 +301,7 @@ footer.credit a{color:var(--ink);}
 // TENSIONS   [{when:[optionId,...],text}]                 legal but uncomfortable
 // FRAGILE    [{test(sel) -> bool,text}]
 // PLAYS      [{name,why,picks:{axisId:[optionId,...]}}]
+// EXCLUSIONS ["one sentence per standing constraint"]  off the board regardless of score
 // ASSUMPTIONS[{k,t}]
 
 const SRC = {};
@@ -302,6 +312,7 @@ const LOCKS = [];
 const TENSIONS = [];
 const FRAGILE = [];
 const PLAYS = [];
+const EXCLUSIONS = [];
 const ASSUMPTIONS = [];
 
 // ================= ENGINE =================
@@ -614,6 +625,14 @@ function renderPlays(){
     host.appendChild(b);
   });
 }
+function renderExclusions(){
+  const el=document.getElementById("exclusions");
+  if(!el)return;
+  const list=(typeof EXCLUSIONS!=="undefined"&&EXCLUSIONS)||[];
+  if(!list.length){el.hidden=true;return;}
+  el.hidden=false;
+  el.querySelector("ul").innerHTML=list.map(t=>"<li>"+esc(t)+"</li>").join("");
+}
 function renderAssump(){
   const root=document.getElementById("assump");
   root.innerHTML=ASSUMPTIONS.map(a=>"<li><b>"+esc(a.k)+":</b> "+esc(a.t)+"</li>").join("");
@@ -672,6 +691,10 @@ function buildMd(){
     md+="\n";
     scenarios.forEach(sc=>{if(sc.sentence)md+="- **"+sc.name+"** \u2014 "+sc.sentence.replace(/^The path in words: /,"")+"\n";});
   }
+  if(typeof EXCLUSIONS!=="undefined"&&EXCLUSIONS&&EXCLUSIONS.length){
+    md+="\n## Ruled out before scoring\n\n";
+    EXCLUSIONS.forEach(t=>md+="- "+t+"\n");
+  }
   md+="\n## Model assumptions\n\n";
   ASSUMPTIONS.forEach(a=>md+="- "+a.k+": "+a.t+"\n");
   md+="\n---\nBuilt with Decision Board \u2014 https://keftek.com/lab/decision-simulator/ \u00b7 \u00a9 2026 Keftek\n";
@@ -700,6 +723,7 @@ document.getElementById("b-export").addEventListener("click",()=>{
 document.documentElement.style.setProperty("--cols",DIMS.length);
 renderBoard();
 renderPlays();
+renderExclusions();
 renderAssump();
 renderSources();
 refresh();

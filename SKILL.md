@@ -108,7 +108,9 @@ when answers are vague. You need:
    options on the board score differently on it? If not, it cannot change the
    decision; cut it.
 6. **Hard exclusions** — things ruled out regardless of score (sectors,
-   channels, deal shapes). These render as standing exclusions, not options.
+   channels, deal shapes). One sentence each, naming the constraint and the
+   reason. They go in `EXCLUSIONS` and render above the board as standing
+   constraints — never as cards, because a card can be picked.
 7. **Locks** — for every pair of axes, ask: "is there a combination here that
    simply cannot work?" Write each as: which option locks, under what
    condition, and the one-sentence reason a stranger would accept. Locks are
@@ -192,7 +194,7 @@ A board that looks invented is worth less than no board: the whole promise is
 that a Decision Board is recognisable as one.
 
 **Fill exactly one region.** Between the `DATA` marker and the `ENGINE`
-marker, replace the nine empty objects with yours. That region is the only
+marker, replace the ten empty objects with yours. That region is the only
 part of the file you write.
 
 | Object | Holds |
@@ -206,6 +208,7 @@ part of the file you write.
 | `TENSIONS` | `{when: [ids...], text}` — legal but uncomfortable pairings |
 | `FRAGILE` | `{test(sel) -> bool, text}` — single-leg fragility warnings |
 | `PLAYS` | `{name, why, picks:{axisId: [ids...]}}` — the whole strategies that are not axes |
+| `EXCLUSIONS` | the Phase 1.6 hard exclusions, one sentence each — what is off the board regardless of score, and why. They render above the board as standing constraints, never as cards |
 | `ASSUMPTIONS` | `{k, t}` — what the dimensions mean, how the profile aggregates, what the tool deliberately does not do |
 
 Outside that region you may change exactly five things, all of them text:
