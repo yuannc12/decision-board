@@ -143,7 +143,10 @@ for (const [id, { opt }] of optIndex) {
     const [n, why] = v;
     if (!Number.isInteger(n) || n < 1 || n > 5) fail("scores", `${id}.${d.k} is ${JSON.stringify(n)} — scores are integers 1 to 5`);
     if (!why || !String(why).trim()) fail("scores", `${id}.${d.k} has no stated reason — an unexplained score is not arguable`);
-    else if (String(why).trim().length < 12) warn("scores", `${id}.${d.k} reason is ${JSON.stringify(why)} — one word labels the score rather than giving a reason for it`);
+    // One word names the score again ("steady", "solid"); it does not say why,
+    // and a score you cannot argue with is the failure this whole layer exists
+    // to avoid. Two words are enough to carry a mechanism ("ML premium").
+    else if (!/\s/.test(String(why).trim())) warn("scores", `${id}.${d.k} reason is ${JSON.stringify(why)} — one word labels the score rather than giving a reason for it`);
   }
 }
 for (const d of SC) {

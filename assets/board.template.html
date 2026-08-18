@@ -176,6 +176,12 @@ section.assumps .srchead button{padding:2px 12px;font-size:var(--fs-xs);}
 #assump li{margin-bottom:var(--s2);break-inside:avoid;}
 @media (max-width:800px){#assump{columns:1;}}
 
+@media (min-width:560px){#skillsec .skgrid{grid-template-columns:repeat(2,1fr);}}
+@media (min-width:900px){#skillsec .skgrid{grid-template-columns:repeat(3,1fr);}}
+@media (min-width:1340px){#skillsec .skgrid{grid-template-columns:repeat(5,1fr);}}
+
+@media (max-width:640px){#skillsec .skspec>div{grid-template-columns:1fr;gap:var(--s1);}}
+
 footer.sources{border-top:1px solid var(--line);padding:var(--s5);}
 footer.sources .srchead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s4);}
 footer.sources .srchead button{padding:2px 12px;font-size:var(--fs-xs);}
@@ -559,9 +565,15 @@ function renderCompare(){
   const el=document.getElementById("compare");
   if(!scenarios.length){el.hidden=true;el.innerHTML="";return;}
   el.hidden=false;
-  const best={};
-  CORE.forEach(d=>{best[d.k]=Math.max(...scenarios.map(s=>s.dims[d.k]??0));});
-  const bestInv=INV?Math.min(...scenarios.map(s=>s.dims[INV.k]??0)):null;
+  // A profile is the mean of ordinal picks, so it moves in steps of 1/DIMS.length.
+  // Marking a 0.1 gap as the winner reads as precision the scores do not carry:
+  // a dimension is only marked where one scenario leads the next by LEAD.
+  const LEAD=0.3;
+  const lead={};
+  SCORECARD.forEach(d=>{
+    const v=[...scenarios.map(s=>s.dims[d.k]??0)].sort((a,b)=>d.inverted?a-b:b-a);
+    lead[d.k]=v.length>1&&(d.inverted?v[1]-v[0]:v[0]-v[1])>=LEAD?v[0]:null;
+  });
   let h="<div class='chead'><h3>Saved scenarios <span class='dimc'>"+scenarios.length+" saved</span></h3><button id='b-compare'>"+(compareOpen?"Hide":"Compare")+"</button></div>";
   if(!compareOpen){
     el.innerHTML=h;
@@ -569,14 +581,14 @@ function renderCompare(){
     if(t)t.addEventListener("click",()=>{compareOpen=true;renderCompare();});
     return;
   }
-  h+="<p class='chint'>Best score per dimension is underlined."+(INV?" "+esc(invName())+" runs the other way: lower is better.":"")+"</p><div class='cwrap'><table><thead><tr><th>Scenario</th>";
+  h+="<p class='chint'>A dimension is underlined where one scenario leads it clearly; too close to call stays unmarked."+(INV?" "+esc(invName())+" runs the other way: lower is better.":"")+"</p><div class='cwrap'><table><thead><tr><th>Scenario</th>";
   SCORECARD.forEach(d=>{h+="<th>"+esc(d.label)+(d.inverted?" ↓":"")+"</th>";});
   h+="<th>Profile</th><th></th></tr></thead><tbody>";
   scenarios.forEach((sc,i)=>{
     h+="<tr"+(sameAsCurrent(sc)?" class='cur'":"")+"><td class='nm'>"+esc(sc.name)+"</td>";
     SCORECARD.forEach(d=>{
       const v=sc.dims[d.k]??0;
-      const isBest=d.inverted?v===bestInv:v===best[d.k];
+      const isBest=lead[d.k]!==null&&v===lead[d.k];
       h+="<td class='num'><span"+(isBest?" class='best'":"")+">"+v.toFixed(1)+"</span></td>";
     });
     h+="<td>"+esc(sc.tag)+"</td><td><div class='cact'><button data-load='"+i+"'>Load</button><button data-del='"+i+"'>Remove</button></div></td></tr>";
@@ -587,7 +599,7 @@ function renderCompare(){
   if(tg)tg.addEventListener("click",()=>{compareOpen=false;renderCompare();});
   el.querySelectorAll("[data-load]").forEach(b=>b.addEventListener("click",()=>loadScenario(+b.dataset.load)));
   el.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
-    scenarios.splice(+b.dataset.del,1);renderTabs();renderCompare();
+    scenarios.splice(+b.dataset.del,1);persistScenarios();renderTabs();renderCompare();
   }));
 }
 let sbOpen=false;
