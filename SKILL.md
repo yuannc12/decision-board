@@ -98,11 +98,25 @@ when answers are vague. You need:
 3. **The options** — 3 to 8 cards per axis. Real options the user would
    consider, plus one or two they dismiss too quickly (the board should test
    beliefs, not confirm them). For each card capture the user's own read on it.
+
+   **A card title is also a sentence fragment.** The board writes the chosen
+   path as a sentence, and it takes each title *up to its first comma* and
+   drops it into that axis's `say` slot (Phase 4). The text before the comma
+   has to stand alone as a value: `Senior lead, then juniors` renders as
+   "staffed as Senior lead", losing the half that mattered. Put the carrying
+   words first and leave the comma for the qualifier — `Dimensional drift, at
+   the gauge` gives "first model on Dimensional drift". Read every title
+   inside its own fragment before you build.
 4. **Single or multi-pick per axis** — most axes pick one; axes like
    "industry" or "route" may allow 2-3.
 5. **The scorecard** — define it WITH the user, in their words: 4-6 dimensions
    every option will be judged on, each with a one-line definition. One
-   dimension must be risk-like and inverted (higher is worse). Defaults worth
+   dimension must be risk-like and inverted (higher is worse) — exactly one,
+   because the scoreboard reads every other dimension as "more is better".
+   When the user names two negative criteria, keep the one that is genuinely
+   a risk and re-polarise the other into its positive form (disruption
+   becomes "production calm", higher is quieter); dropping a criterion the
+   user named is the worse answer. Defaults worth
    offering for a market decision: market, access, speed, margin, risk — but
    the user's own vocabulary beats a template. Test each dimension: would two
    options on the board score differently on it? If not, it cannot change the
@@ -119,6 +133,9 @@ when answers are vague. You need:
    not" — is a tension, never a lock; a hard exclusion built on a stereotype
    costs the tool its credibility with the first user who knows a
    counterexample.
+
+   Most boards find two to four. Checking every pair is the discipline;
+   finding a lock in every pair means you have started inventing them.
 8. **Tensions** — combinations that are legal but uncomfortable. These warn,
    never lock.
 
@@ -131,15 +148,28 @@ For every card, find 1-3 verifiable facts that inform its scores. The gate:
   year, and URL. All of it ships in the output data — the quote is not a
   working note, it is the audit trail. A reader of the finished board must
   be able to click the source and find the quote.
-- **Fetch the source and confirm the quote appears in the fetched content**
-  (fixed-string match, no paraphrase). Cannot fetch or cannot find the quote →
-  drop the fact. Never reword a quote to make it match.
+- **Fetch the source and confirm the quote appears in the fetched content.**
+  Match on the words and the numbers, ignoring punctuation and case — a page
+  is free to re-typeset a dash or a curly quote, and stripping its markup
+  leaves spaces where the tags were. Everything else must be the source's own
+  wording: a quote stitched together from a heading and a sentence, or
+  reworded to fit, fails this and should. Cannot fetch or cannot find the
+  quote → drop the fact. Never reword a quote to make it match.
 - Source tier, in order: (1) the original — the institution's own report,
   statistical release, or announcement; (2) established media with an
   editorial masthead reporting the original; (3) never content farms, SEO
   market-size mills, vendor marketing standing in for research, or aggregators.
   When a news article cites a report, chase the original first.
 - Prefer data under 3 years old. Always show the year.
+- A statement carries the number when the source gives one. Some facts that
+  belong on a board are not numeric — a legal duty, a standard's requirement,
+  a documented failure mode. Ship those as they are; never pad a number in to
+  satisfy the shape of the line.
+- **A card with no verifiable fact is allowed, and must be declared.** Ship it
+  with an empty `facts` array and name in `#srcnote` which cards carry no
+  evidence. What you must not do is re-plan the board around what happens to
+  be easy to source: the axes come from the user's decision, not from the
+  search results.
 - Report the drop count to the user: "N facts verified, M dropped (and why)".
 - Facts the user supplies from their own operation are legal and often the
   best data on the board — label them "Internal" and never dress them as
@@ -155,16 +185,23 @@ verified facts.
    ≤6-word reason. The reason is not decoration: it is the handle the user
    grabs when they disagree, and disagreement card-by-card is the tool
    working as intended.
+   A money-shaped dimension is legal and common — "two-year value", "cost
+   fit". Score it as a ranking of the options against each other, never as an
+   amount, and say so in `ASSUMPTIONS`: no currency figure appears anywhere on
+   the board. A budget the user gives you is their number and may be stated;
+   a number you derive from it is an invented financial.
 2. **The path profile** — average within each axis first, then across the
    axes, so an axis where three cards are picked counts once rather than three
    times. Never collapse the dimensions into one weighted total.
    The profile names the strongest and weakest dimension in words, plus a
    plain reading of the risk level, and a short tag: "balanced", "high risk",
    or "trades X for Y".
-3. **Locks and tensions** — wire in the Phase 1 locks (structural
+3. **Locks, tensions, fragility** — wire in the Phase 1 locks (structural
    impossibilities, with the reason shown on click) and tensions (legal but
-   uncomfortable, shown as warnings). Add single-leg fragility warnings for
-   paths standing entirely on one fragile option.
+   uncomfortable, shown as warnings). Add `FRAGILE` checks for paths standing
+   entirely on one leg. The board labels the last two differently, because
+   they ask for different moves: a tension is a trade to accept knowingly, a
+   fragility is a second leg to add.
 4. **Presets** — 3-5 named plays (coherent full paths) so the first click
    shows the tool working. Each carries a one-line "why this play", shown
    as visible text when selected, never hover-only.
@@ -183,10 +220,12 @@ the drawer, the scoreboard, the locked-card treatment, the mobile collapse.
 All of it lives in `board.template.html`, which ships beside this skill. Your
 job is the data layer and nothing else.
 
-**Get the template.** It sits next to this file in the skill package, at
-`assets/board.template.html`. Use that copy — it is the one you were given,
-and it needs no network at all. Only if you were handed `SKILL.md` on its
-own, fetch it once from the repository the skill comes from:
+**Get the template.** It ships beside this file — at `assets/board.template.html`
+if you were given the repository, or as `board.template.html` in the same
+folder if the files were downloaded together. Use that copy: it is the one
+you were given, and it needs no network at all. Only if you were handed
+`SKILL.md` on its own, fetch it once from the repository the skill comes
+from:
 
     https://raw.githubusercontent.com/yuannc12/decision-board/main/assets/board.template.html
 
@@ -207,16 +246,27 @@ part of the file you write.
 | `SRC` | `{key: {n: "Source name, year", u: "url"}}` — every source renders as a link, never a bare name |
 | `DETAIL` | per card: `{play, gain, give, works}` — the motion, the trade, the condition |
 | `LOCKS` | `{opt, test(sel) -> reason string or false}` — structural impossibilities only |
+| ↳ `sel` | the live selection, `{axisId: [optionId, ...]}` — an axis with nothing picked is **absent**, not empty. Test it with `has(sel, "some-id")`, a helper the engine defines for you; `sel.route.includes(...)` throws the moment that column is untouched |
 | `TENSIONS` | `{when: [ids...], text}` — legal but uncomfortable pairings |
 | `FRAGILE` | `{test(sel) -> bool, text}` — single-leg fragility warnings |
 | `PLAYS` | `{name, why, picks:{axisId: [ids...]}}` — the whole strategies that are not axes |
 | `EXCLUSIONS` | the Phase 1.6 hard exclusions, one sentence each — what is off the board regardless of score, and why. They render above the board as standing constraints, never as cards |
 | `ASSUMPTIONS` | `{k, t}` — what the dimensions mean, how the profile aggregates, what the tool deliberately does not do |
 
-Outside that region you may change exactly five things, all of them text:
+Counts for the collections the phases above leave open: 2-4 locks, 4-8
+tensions, 2-4 fragility checks, 3-6 exclusions, and an assumption for every
+dimension plus the two or three that state what the board does not do. An
+axis may also carry `sub`, a short line shown under its title in the drawer;
+leave it out unless a column needs a caveat its card readings cannot hold.
+
+Outside that region you may change five things, all of them text:
 
 - the `<title>`;
-- the heading and lede inside `#demohead` — the decision in the user's own terms;
+- the heading inside `#demohead` — the decision in the user's own terms;
+- the lede under it. Keep what it says about the mechanic ("cards that cannot
+  coexist with your picks lock and say why") and put your decision in front
+  of it — replacing the line wholesale deletes the only place the board
+  explains how it works;
 - `#scenario` — who the board is written for, and from whose position the
   scores are written;
 - `#srcnote` — how the facts were verified, on what date, and what was
@@ -249,7 +299,8 @@ handed `SKILL.md` on its own, fetch it once:
 
     https://raw.githubusercontent.com/yuannc12/decision-board/main/validate.mjs
 
-Node 18 or newer, no packages. It checks the stylesheet against the template
+Node 18 or newer, no packages. Add `--offline` while you are still fixing
+structure, to skip the fetches; run it without the flag before you hand over. It checks the stylesheet against the template
 byte for byte; that every placeholder was replaced; that axis and card ids are
 unique; that every card is scored on every dimension with a stated reason,
 integers 1 to 5; that exactly one dimension is inverted; that no dimension
@@ -287,7 +338,8 @@ their quotes, and the plays. What follows is what a machine cannot check.
   anywhere would settle the decision by itself, move it to `PLAYS`.
 - Check a phone-width viewport: the scoreboard must collapse to a one-line
   summary with an expand control, not cover the board.
-- Rename a dimension's `label` in `SCORECARD` (not its `k`) and reload: the
+- Rename a dimension's `label` in `SCORECARD` (not its `k`) and reload — in
+  a copy, or undo it before handing the file over: the
   scoreboard, the drawer hint, the comparison table and the markdown export
   must all follow. If anything still shows the old label, the engine is not
   reading the scorecard.

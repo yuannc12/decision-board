@@ -619,7 +619,7 @@ function renderScore(){
   if(p.profile)exp.push(p.profile.text);
   const tens=TENSIONS.filter(t=>t.when.every(w=>has(sel,w)));
   tens.forEach(t=>exp.push("Tension: "+t.text));
-  FRAGILE.forEach(f=>{if(f.test(sel))exp.push("Tension: "+f.text);});
+  FRAGILE.forEach(f=>{if(f.test(sel))exp.push("Fragile: "+f.text);});
   if(!p.picks)exp.push("Pick one card per column. The scoreboard computes as you go; locked cards explain themselves when clicked.");
   else if(!p.complete)exp.push("Path incomplete: the profile appears when every column has a pick.");
   h+="<div class='exp'>"+exp.map(e=>"<div>"+esc(e)+"</div>").join("")+"</div></div>";
@@ -733,9 +733,9 @@ function buildMd(){
     if(p.profile)md+="- Profile ("+p.profile.tag+"): "+p.profile.text+"\n";
     else md+="- _Path incomplete: the profile appears when every column has a pick._\n";
   }else{md+="_No cards picked._\n";}
-  const tens=TENSIONS.filter(t=>t.when.every(w=>has(sel,w))).map(t=>t.text)
-    .concat(FRAGILE.filter(f=>f.test(sel)).map(f=>f.text));
-  if(tens.length){md+="\n## Tensions\n\n";tens.forEach(t=>md+="- "+t+"\n");}
+  const tens=TENSIONS.filter(t=>t.when.every(w=>has(sel,w))).map(t=>"Tension: "+t.text)
+    .concat(FRAGILE.filter(f=>f.test(sel)).map(f=>"Fragile: "+f.text));
+  if(tens.length){md+="\n## Tensions and fragility\n\n";tens.forEach(t=>md+="- "+t+"\n");}
   if(scenarios.length){
     md+="\n## Saved scenarios\n\n| Scenario | "+SCORECARD.map(d=>d.label+(d.inverted?" (lower is better)":"")).join(" | ")+" | Profile |\n|"+Array(SCORECARD.length+2).fill("---").join("|")+"|\n";
     scenarios.forEach(sc=>{md+="| "+sc.name+" | "+SCORECARD.map(d=>(sc.dims[d.k]??0).toFixed(1)).join(" | ")+" | "+sc.tag+" |\n";});
